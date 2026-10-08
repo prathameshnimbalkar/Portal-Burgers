@@ -2,6 +2,14 @@ import React, { useState, useMemo } from 'react';
 import UserModal from './UserModal';
 import AddUserModal from './AddUserModal';
 
+const SORT_OPTIONS = [
+  { value: 'orders-desc', label: 'Most Orders' },
+  { value: 'orders-asc', label: 'Least Orders' },
+  { value: 'name-asc', label: 'Name (A to Z)' },
+  { value: 'name-desc', label: 'Name (Z to A)' },
+  { value: 'newest', label: 'Newest First' }
+];
+
 export default function UsersPage({
   users,
   loading,
@@ -9,30 +17,58 @@ export default function UsersPage({
   lastFetched,
   onRefresh,
   onAddUser,
-  onTriggerError
+  onTriggerError,
+  onIncrementOrders
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('ALL');
+  const [sortBy, setSortBy] = useState('orders-desc');
   const [activeUserModal, setActiveUserModal] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Available unique roles for filter
   const roles = useMemo(() => {
-    const list = Array.from(new Set(users.map(u => u.role)));
+    const list = Array.from(new Set(users.map((u) => u.role)));
     return ['ALL', ...list];
   }, [users]);
 
-  // Filtered users list
+  // Filtered and sorted users list following best practices
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+    const filtered = users.filter((user) => {
+      const query = searchQuery.trim().toLowerCase();
       const matchesSearch =
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.favoriteBurger && user.favoriteBurger.toLowerCase().includes(searchQuery.toLowerCase()));
+        !query ||
+        String(user.name || '').toLowerCase().includes(query) ||
+        String(user.email || '').toLowerCase().includes(query) ||
+        (user.favoriteBurger && String(user.favoriteBurger).toLowerCase().includes(query));
       const matchesRole = selectedRole === 'ALL' || user.role === selectedRole;
       return matchesSearch && matchesRole;
     });
-  }, [users, searchQuery, selectedRole]);
+
+    return [...filtered].sort((a, b) => {
+      const activeSort = SORT_OPTIONS.some((opt) => opt.value === sortBy) ? sortBy : 'orders-desc';
+      switch (activeSort) {
+        case 'orders-desc':
+          return (Number(b.ordersCount) || 0) - (Number(a.ordersCount) || 0);
+        case 'orders-asc':
+          return (Number(a.ordersCount) || 0) - (Number(b.ordersCount) || 0);
+        case 'name-asc':
+          return String(a.name || '').localeCompare(String(b.name || ''));
+        case 'name-desc':
+          return String(b.name || '').localeCompare(String(a.name || ''));
+        case 'newest':
+          return (Number(b.id) || 0) - (Number(a.id) || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [users, searchQuery, selectedRole, sortBy]);
+
+  // Keep modal data fresh when orders count changes
+  const selectedUser = useMemo(() => {
+    if (!activeUserModal) return null;
+    return users.find((u) => u.id === activeUserModal.id) || activeUserModal;
+  }, [users, activeUserModal]);
 
   const handleSelectUser = (user) => {
     setActiveUserModal(user);
@@ -108,20 +144,39 @@ export default function UsersPage({
           )}
         </div>
 
-        <div className="role-filter-wrap">
-          <label htmlFor="role-filter">Filter by Role:</label>
-          <select
-            id="role-filter"
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="role-select"
-          >
-            {roles.map(r => (
-              <option key={r} value={r}>
-                {r === 'ALL' ? 'All Roles' : r}
-              </option>
-            ))}
-          </select>
+        <div className="filter-controls-group">
+          <div className="role-filter-wrap">
+            <label htmlFor="role-filter">Filter by Role:</label>
+            <select
+              id="role-filter"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="role-select"
+            >
+              {roles.map(r => (
+                <option key={r} value={r}>
+                  {r === 'ALL' ? 'All Roles' : r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sort-filter-wrap">
+            <label htmlFor="sort-select">Sort By:</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="role-select sort-select"
+              aria-label="Sort members"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -207,7 +262,20 @@ export default function UsersPage({
                   </div>
 
                   <div className="card-actions">
+                    <button
+                      type="button"
+                      className="craft-quick-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onIncrementOrders?.(user.id);
+                      }}
+                      title={`Craft another burger for ${user.name}`}
+                      aria-label={`Craft order for ${user.name}`}
+                    >
+                      🍔 +1 Order
+                    </button>
                     <button 
+                      type="button"
                       className="view-btn"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -226,8 +294,9 @@ export default function UsersPage({
 
       {/* User Details Modal */}
       <UserModal
-        user={activeUserModal}
+        user={selectedUser}
         onClose={() => setActiveUserModal(null)}
+        onIncrementOrders={onIncrementOrders}
       />
 
       {/* Add User Modal */}

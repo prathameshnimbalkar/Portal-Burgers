@@ -124,9 +124,42 @@ export async function createUserApi(newUser) {
         avatarBg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)"
       };
 
+      console.log(`[API Mock] New member registered: Name=${created.name}, Email=${created.email}, Phone=${created.phone}, Address=${created.address}`);
+
       localUsersStore = [created, ...localUsersStore];
       resolve(created);
     }, 400);
+  });
+}
+
+/**
+ * In-memory client mock storage helper to increment order count.
+ * @param {number} userId - The numeric ID of the user.
+ * @returns {Promise<Object>} Resolves with the updated user record.
+ */
+export async function incrementOrdersApi(userId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const numericId = Number(userId);
+      const index = localUsersStore.findIndex((u) => u.id === numericId);
+      if (index === -1) {
+        reject(new Error(`User with ID ${userId} not found`));
+        return;
+      }
+
+      const updated = {
+        ...localUsersStore[index],
+        ordersCount: (localUsersStore[index].ordersCount || 0) + 1
+      };
+
+      localUsersStore = [
+        ...localUsersStore.slice(0, index),
+        updated,
+        ...localUsersStore.slice(index + 1)
+      ];
+
+      resolve(updated);
+    }, 200);
   });
 }
 
@@ -136,3 +169,4 @@ export async function createUserApi(newUser) {
 export function resetUsersApi() {
   localUsersStore = [...INITIAL_USERS];
 }
+

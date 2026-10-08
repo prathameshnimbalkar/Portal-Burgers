@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { logUserProfileView } from '../services/logger';
 
-export default function UserModal({ user, onClose }) {
+export default function UserModal({ user, onClose, onIncrementOrders }) {
+  useEffect(() => {
+    if (user) {
+      logUserProfileView(user);
+    }
+  }, [user]);
+
   if (!user) return null;
 
   return (
@@ -50,7 +57,9 @@ export default function UserModal({ user, onClose }) {
 
           <div className="modal-field">
             <span className="field-label">Total Orders Crafted</span>
-            <span className="field-value">{user.ordersCount} orders</span>
+            <span className="field-value orders-highlight">
+              {user.ordersCount} orders
+            </span>
           </div>
 
           {user.bio && (
@@ -62,12 +71,27 @@ export default function UserModal({ user, onClose }) {
         </div>
 
         <div className="modal-footer">
-          <button className="secondary-btn" onClick={onClose}>
+          <button type="button" className="secondary-btn" onClick={onClose}>
             Close
           </button>
-          <a href={`mailto:${user.email}`} className="primary-btn">
-            Send Email
-          </a>
+          <button
+            type="button"
+            className="craft-modal-btn"
+            onClick={() => onIncrementOrders?.(user.id)}
+            title="Craft another order for this member"
+            aria-label="Craft another order"
+          >
+            🍔 Craft +1 Order
+          </button>
+          {user.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email) ? (
+            <a
+              href={`mailto:${encodeURIComponent(user.email.trim())}`}
+              className="primary-btn"
+              rel="noopener noreferrer"
+            >
+              Send Email
+            </a>
+          ) : null}
         </div>
       </div>
     </div>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import WelcomePage from './components/WelcomePage';
 import UsersPage from './components/UsersPage';
-import { fetchUsersApi, createUserApi } from './services/mockApi';
+import { fetchUsersApi, createUserApi, incrementOrdersApi } from './services/mockApi';
+import { logUserRegistration, logUserError } from './services/logger';
 import './App.css';
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
     }, 3200);
   }, []);
 
-  // API Call function
+  // API Call function for manual refresh/actions
   const loadUsers = useCallback(async ({ shouldFail = false } = {}) => {
     setLoading(true);
     setError(null);
@@ -39,21 +40,76 @@ export default function App() {
     }
   }, [showToast]);
 
-  // Initial load on mount
+  // Initial load on mount following React best practices with cleanup
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const response = await fetchUsersApi({ delay: 650, shouldFail: false });
+        if (!cancelled) {
+          setUsers(response.data);
+          const timeStr = new Date().toLocaleTimeString();
+          setLastFetched(timeStr);
+          showToast(`Mock API resolved: ${response.data.length} users fetched at ${timeStr}`);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Failed to load users from mock API.');
+          showToast(`⚠️ API Error: ${err.message}`);
+          setLoading(false);
+        }
+      }
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast]);
 
   // Handle adding user
   const handleAddUser = async (newUser) => {
     try {
       const created = await createUserApi(newUser);
       setUsers(prev => [created, ...prev]);
+      logUserRegistration(created);
       showToast(`✅ Member "${created.name}" created successfully!`);
-    } catch {
+    } catch (err) {
+      logUserError('register member', newUser, err);
       showToast('⚠️ Failed to create member.');
     }
   };
+
+  // Handle incrementing order count (Optimistic UI update + rollback on error)
+  const handleIncrementOrders = useCallback(async (userId) => {
+    let previousOrdersCount;
+    setUsers((prev) =>
+      prev.map((user) => {
+        if (user.id === userId) {
+          previousOrdersCount = user.ordersCount || 0;
+          return { ...user, ordersCount: previousOrdersCount + 1 };
+        }
+        return user;
+      })
+    );
+
+    try {
+      const updated = await incrementOrdersApi(userId);
+      showToast(`Order crafted! ${updated.name} now has ${updated.ordersCount} orders.`);
+    } catch (err) {
+      if (previousOrdersCount !== undefined) {
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === userId ? { ...user, ordersCount: previousOrdersCount } : user
+          )
+        );
+      }
+      logUserError('increment order count', { id: userId }, err);
+      showToast('⚠️ Could not update order count.');
+    }
+  }, [showToast, logUserError]);
 
   // Welcome page test mock API button
   const handleTriggerApiTest = async () => {
@@ -95,6 +151,7 @@ export default function App() {
             onRefresh={() => loadUsers({ shouldFail: false })}
             onAddUser={handleAddUser}
             onTriggerError={() => loadUsers({ shouldFail: true })}
+            onIncrementOrders={handleIncrementOrders}
           />
         )}
       </main>
