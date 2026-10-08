@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import WelcomePage from './components/WelcomePage';
 import UsersPage from './components/UsersPage';
 import { fetchUsersApi, createUserApi } from './services/mockApi';
+import { logUserRegistration, logUserError } from './services/logger';
 import './App.css';
 
 export default function App() {
@@ -49,8 +50,10 @@ export default function App() {
     try {
       const created = await createUserApi(newUser);
       setUsers(prev => [created, ...prev]);
+      logUserRegistration(created);
       showToast(`✅ Member "${created.name}" created successfully!`);
-    } catch {
+    } catch (err) {
+      logUserError('register member', newUser, err);
       showToast('⚠️ Failed to create member.');
     }
   };
