@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { logUserProfileView } from '../services/logger';
 
 export default function UserModal({ user, onClose }) {
+  useEffect(() => {
+    if (user) {
+      logUserProfileView(user);
+    }
+  }, [user]);
+
   if (!user) return null;
 
   return (

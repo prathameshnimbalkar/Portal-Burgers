@@ -124,6 +124,8 @@ export async function createUserApi(newUser) {
         avatarBg: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)"
       };
 
+      console.log(`[API Mock] New member registered: Name=${created.name}, Email=${created.email}, Phone=${created.phone}, Address=${created.address}`);
+
       localUsersStore = [created, ...localUsersStore];
       resolve(created);
     }, 400);
