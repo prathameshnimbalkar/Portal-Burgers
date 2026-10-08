@@ -34,6 +34,12 @@ export default function UsersPage({
     });
   }, [users, searchQuery, selectedRole]);
 
+  // Active members count for directory status
+  const activeMembersCount = useMemo(() => {
+    if (!Array.isArray(users)) return 0;
+    return users.filter((u) => u && u.status === 'Active').length;
+  }, [users]);
+
   const handleSelectUser = (user) => {
     setActiveUserModal(user);
   };
@@ -88,7 +94,10 @@ export default function UsersPage({
           </div>
         )}
         <div className="info-item">
-          <span>Total Records: <strong>{users.length}</strong></span>
+          <span>Total Records: <strong>{Array.isArray(users) ? users.length : 0}</strong></span>
+        </div>
+        <div className="info-item">
+          <span>Active Members: <strong>{activeMembersCount}</strong></span>
         </div>
       </div>
 
