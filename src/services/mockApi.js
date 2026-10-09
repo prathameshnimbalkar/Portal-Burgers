@@ -12,7 +12,8 @@ export const INITIAL_USERS = [
     ordersCount: 142,
     favoriteBurger: "Truffle Umami Bacon Burger",
     avatarBg: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-    bio: "Obsessed with perfect sear, brioche chemistry, and secret sauce crafting."
+    bio: "Obsessed with perfect sear, brioche chemistry, and secret sauce crafting.",
+    customNote: "<span class='badge-highlight'>⭐ 3-Star Michelin Master Crafter</span>"
   },
   {
     id: 2,
