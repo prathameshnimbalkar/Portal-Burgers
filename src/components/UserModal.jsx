@@ -66,6 +66,15 @@ export default function UserModal({ user, onClose }) {
               <p className="bio-text">"{user.bio}"</p>
             </div>
           )}
+
+          {user.customNote && (
+            <div className="modal-field full-width">
+              <span className="field-label">Special Chef Tasting Note</span>
+              <div className="custom-note-content">
+                {user.customNote}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">

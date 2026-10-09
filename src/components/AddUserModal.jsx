@@ -9,6 +9,7 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
   const [role, setRole] = useState('VIP Member');
   const [favoriteBurger, setFavoriteBurger] = useState('Smoky BBQ Double Smash');
   const [bio, setBio] = useState('');
+  const [customNote, setCustomNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -27,7 +28,8 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
       role,
       status: 'Active',
       favoriteBurger,
-      bio: bio.trim() || 'Burger connoisseur and Alpha Portal member.'
+      bio: bio.trim() || 'Burger connoisseur and Alpha Portal member.',
+      customNote: customNote.trim()
     });
     setIsSubmitting(false);
     onClose();
@@ -137,6 +139,17 @@ export default function AddUserModal({ isOpen, onClose, onAddUser }) {
               placeholder="Short description..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="customNote">Special Chef Tasting Note / Badge (Supports Rich-Text)</label>
+            <input
+              id="customNote"
+              type="text"
+              placeholder="e.g. <b>Head Grillmaster Special</b>"
+              value={customNote}
+              onChange={(e) => setCustomNote(e.target.value)}
             />
           </div>
 
