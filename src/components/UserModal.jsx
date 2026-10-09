@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { logUserProfileView } from '../services/logger';
 
 export default function UserModal({ user, onClose }) {
+  useEffect(() => {
+    if (user) {
+      logUserProfileView(user);
+    }
+  }, [user]);
+
   if (!user) return null;
 
   return (
@@ -57,6 +64,15 @@ export default function UserModal({ user, onClose }) {
             <div className="modal-field full-width">
               <span className="field-label">Bio</span>
               <p className="bio-text">"{user.bio}"</p>
+            </div>
+          )}
+
+          {user.customNote && (
+            <div className="modal-field full-width">
+              <span className="field-label">Special Chef Tasting Note</span>
+              <div className="custom-note-content">
+                {user.customNote}
+              </div>
             </div>
           )}
         </div>
